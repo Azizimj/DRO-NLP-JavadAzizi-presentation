@@ -1,0 +1,75 @@
+% \usepackage{default}
+% \usetheme{default}
+% \usecolortheme{dove}
+
+% section in the header
+% \useoutertheme{miniframes}
+% \useoutertheme{sidebar}
+
+\usepackage{latexsym,xcolor,multicol,booktabs,calligra}
+
+
+%Defining viterbi template colors
+\definecolor{viterbiyellow}{HTML}{E9A000}
+\definecolor{viterbired}{HTML}{990000}
+
+%Redefine more fields as required
+\newcommand{\viterbititle}[1]{\title{\textcolor{viterbiyellow}{#1}}}
+\newcommand{\viterbiauthor}[1]{\author{\textcolor{viterbiyellow}{#1}}}
+\newcommand{\viterbidate}[1]{\date{\textcolor{viterbiyellow}{#1}}}
+
+%Change this environment to include any additional formatting required
+\newenvironment{viterbiframe}[1]{
+\begin{frame}{\textcolor{viterbired}{#1}}
+}
+{\end{frame}}
+
+%To show the outline slide before each section
+\AtBeginSection[]
+{
+  \begin{viterbiframe}{Outline}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{viterbiframe}
+}
+
+
+\setbeamertemplate{headline}
+{%
+\begin{beamercolorbox}{section in head/foot}
+\vskip2pt\insertnavigation{\paperwidth}\vskip2pt
+\end{beamercolorbox}%
+}
+
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+%   \begin{beamercolorbox}[wd=.4\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+%     \usebeamerfont{author in head/foot}\insertshortauthor
+%   \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.6\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle\hspace*{3em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{1ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+
+% Package to manage the bibliography
+% \usepackage[backend=biber, style=numeric, sorting=none]{biblatex}
+\usepackage[style=verbose,backend=biber]{biblatex}
+% \addbibresource{refsSagawa20.bib}
+% \bibliographystyle{plain}
+\bibliography{refsSagawa20,refs}
+
+
+\setbeamerfont{footnote}{size=\tiny}
+
+
+% \usepackage{enumitem}
+
+\usepackage{cleveref}
+\usepackage{hyperref}
+
+% %end preamble
+

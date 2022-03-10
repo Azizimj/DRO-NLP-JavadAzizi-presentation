@@ -1,0 +1,522 @@
+%Preamble
+% \documentclass[handout]{beamer}
+\documentclass{beamer}
+
+\input{preamble}
+\input{macros}
+\input{math-macro}
+% \input{std-macros}
+
+%Document Begins here
+\begin{document}
+
+
+%Title slide
+\input{title.tex}
+
+\setbeamertemplate{background}{\includegraphics[height=\paperheight]{img/bg3.png}}
+
+
+%Table of contents
+%Each \section or \subsection command in the document generates a TOC entry
+\begin{viterbiframe}{Outline}
+\tableofcontents
+\end{viterbiframe}
+
+%the document can be split in terms of sections or slides. I would prefer section level as a good tradeoff between number of tex files and complexity of each slide.
+% \input{slide1.tex}
+
+
+\section{DR NNs}
+\begin{viterbiframe}{{Paper Intro}}
+\begin{itemize}
+    \item {\bf Distributionally Robust Neural Networks for Group Shifts: On the Importance of Regularization for Worst-Case Generalization}
+    \begin{itemize}
+        {\small
+        \item[] Shiori Sagawa, \textit{\scriptsize Stanford University}
+        \item[] Pang Wei Koh, \textit{\scriptsize Stanford University}
+        \item[] Tatsunori B. Hashimoto, \textit{\scriptsize Microsoft}
+        \item[] Percy Liang, \textit{\scriptsize Stanford University}}
+    \end{itemize}
+\end{itemize}
+% We follow the current of the paper.
+\end{viterbiframe}
+
+% \section{Introduction (DR NNs)}
+\begin{viterbiframe}{Motivation}
+
+\begin{itemize}
+    \begin{columns}
+    \begin{column}{.6\textwidth}
+    \item Typical goal: High accuracy on an i.i.d. test set
+    \pause
+    \item Approach: Minimize the \alert{average loss} on a training set 
+    \pause
+    \item Caveat: Fail on rare and atypical examples 
+    % \footcite{demszky2018transforming}
+    \begin{itemize}
+        \item Rely on \alert{spurious} correlations: misleading heuristics that work for most training examples but \alert{do not} always hold.
+        \item Violate \alert{equity} considerations 
+        % \footcite{buolamwini2018gender}
+    \end{itemize}
+    \end{column}
+    \pause
+    \begin{column}{.3\textwidth}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\linewidth]{img/seagel.jpg}
+        % \caption{Caption}
+        % \label{fig:my_label}
+    \end{figure}
+    \end{column}
+    \end{columns}
+    
+\end{itemize}
+
+\end{viterbiframe}
+
+\begin{viterbiframe}{{\alert{Spurious} correlations}}
+    
+    \begin{itemize}
+        \item Determining if two sentences agree or contradict
+        \item The presence of negation words like ‘\alert{never}’ is strongly correlated with contradiction 
+        \item Artifacts in crowdsourced training data
+    \end{itemize}
+    
+\end{viterbiframe}
+
+\begin{viterbiframe}{{\alert{Spurious} correlations}}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{img/dataset.pdf}
+        % \caption{}
+        % \label{fig:my_label}
+    \end{figure}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Solution}
+    \begin{itemize}
+        \item Minimize the \alert{worst-case} loss over \alert{groups} in the training data
+        \item i.e., Distributionally Robust Optimization \footcite{bental2013robust,oren2019distributionally}
+        \item Grouping together \alert{contradictory} sentences with \alert{no negation} words in the \emph{natural language inference} (NLI) example above.
+        
+    \end{itemize}
+\end{viterbiframe}
+
+\begin{viterbiframe}{{Preliminary Experiments, DRO doesn't work}}
+\begin{itemize}
+    \item DRO in the context of \alert{overparameterized} neural networks in 3 applications
+    \begin{itemize}
+        \item NLI with the MultiNLI dataset %\footcite{williams2018broad}
+        \item Facial recognition with CelebA %\footcite{liu2015deep}
+        \item Bird photograph recognition with CUB dataset %\footcite{wah2011cub}.
+    \end{itemize}
+    \item Problem: if a model achieves \alert{zero training loss}, then it is optimal on both the worst-case (DRO) and the average training objectives:
+    \begin{itemize}
+        \item For both ERM and group DRO, the \alert{generalization gap} is small on average but large for the worst group.
+    \end{itemize}
+\end{itemize}
+     
+\end{viterbiframe}
+
+\begin{viterbiframe}{Solution}
+
+\begin{itemize}
+    \item Use \alert{strongly-regularized} group DRO
+    \pause
+    \item Bi-product: Regularization might not be important for good \alert{average performance} e.g., models can \alert{“train longer and generalize better”} on average \footcite{hoffer2017train} 
+    \pause
+    \item It appears important for good worst-case performance.
+\end{itemize}
+\end{viterbiframe}
+
+\section{Problem Setup}
+
+\begin{viterbiframe}{{Objective Function}}
+\begin{itemize}
+    \item Empirical risk minimization (ERM):
+    \begin{align}%\label{eqn:hterm}
+      \hterm := \arg\min_{\theta \in \Theta} 
+      \ \E_{(x, y) \sim \hP}
+    [\ell(\theta; (x, y))]
+    \end{align}
+    where $\hP$ is the \alert{empirical distribution} over the training data.
+    \end{itemize}
+\end{viterbiframe}
+
+\begin{viterbiframe}{{Objective Function}}
+\begin{itemize}
+    \item Distributionally Robust Optimization (DRO):
+        \begin{align}\label{eq:dro}
+          \underset{\theta \in \Theta}{\vphantom{\sup}\min} \Bigl\{ \mathcal{R}(\theta) := \sup_{Q \in \mathcal{Q}} \E_{(x, y) \sim Q}[\ell(\theta; (x, y))] \Bigr\}.
+        \end{align}
+        \pause
+    The uncertainty set $\mathcal{Q}$ encodes the \alert{possible test distributions} that we want our model to perform well on.
+    \end{itemize}
+    \begin{figure}
+        \centering
+        \includegraphics[width=.4\linewidth]{img/mmodal.png}
+        % \caption{Caption}
+        % \label{fig:my_label}
+    \end{figure}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Uncertainty Set}
+
+\begin{itemize}
+ \item Use \alert{Prior knowledge} of spurious correlations to \alert{define groups} over the training data
+ 
+ \pause
+ \item \alert{Group DRO}: the training distribution $P$ is assumed to be a mixture of $m$ groups $P_g$ indexed by $\mathcal{G} = \{1, 2, \ldots, m\}$.
+ \pause
+ \item Then 
+ \[
+ \mathcal{Q} := \{ \sum_{g=1}^m q_g P_g: q \in \Delta_m \}
+ \]
+ \pause
+ \item and the worst-case risk is
+ \begin{align}
+\label{eqn:groupdroq}
+  \mathcal{R}(\theta)
+  &= \underset{g \in \mathcal{G}}{\max} \ \E_{(x, y) \sim P_g}[\ell(\theta; (x, y))].
+\end{align} 
+    by concavity of linear function.
+
+\pause
+ \item Learns models that are robust to \alert{group shifts}
+
+\end{itemize}
+ 
+\end{viterbiframe}  
+
+\begin{viterbiframe}{Group DRO}
+\begin{itemize}
+    \item Assume the training data comprises $(x, y, g)$ triplets
+    \pause
+    \item Though we \alert{don't observe} $g$ at test time, so the model cannot use $g$ directly. 
+    \pause
+    \item Instead, worst-group risk $\hat{\mathcal{R}}(\theta)$:
+    \begin{align}
+    % \label{eqn:htdro}
+      \htdro := \underset{\theta \in \Theta}{\vphantom{\sup}\argmin} \Bigl\{\hat{\mathcal{R}}(\theta) :=  \underset{g \in \mathcal{G}}{\vphantom{\argmin}\max} \ \E_{(x, y) \sim \hP_g}[\ell(\theta; (x, y))] \Bigr\}\nonumber
+    \end{align}
+    
+    \item Worst-group \emph{generalization gap}
+    \[\delta \eqdef  \mathcal{R}(\theta)  -\hat{\mathcal{R}}(\theta)\;,\]
+    which for overparameterized neural networks, is large unless we apply \alert{sufficient regularization}.
+\end{itemize}
+\end{viterbiframe}
+
+
+\begin{viterbiframe}{Application}
+    Each data point $(x, y)$ has some \alert{input attribute} $a(x) \in \mathcal{A}$ that is spuriously correlated with the label $y$
+    \pause
+    
+    We use this prior knowledge to \alert{form $m = |\mathcal{A}| \times |\mathcal{Y}|$} groups, one for each value of $(a, y)$.
+    
+    \pause
+    
+    
+\end{viterbiframe}
+
+\begin{viterbiframe}{Application}
+
+\begin{itemize}
+
+    \item Object recognition with correlated \alert{backgrounds}: Waterbirds
+    
+    $\mathcal{Y} = \{\text{waterbird}, \text{landbird}\}$
+    
+    $\mathcal{A} = \{\text{water background}, \text{land background}\}$,
+    
+    Waterbirds (landbirds) more frequently appearing against a water (land)
+    
+    \pause
+    \item Object recognition with correlated \alert{demographics}: CelebA dataset
+    
+    $\mathcal{Y} = \{\text{blond}, \text{dark}\}$
+    
+    $\mathcal{A} = \{\text{male}, \text{female}\}$
+    
+    Smallest group: blond-haired males.
+\end{itemize}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Application (Cont.)}
+\begin{itemize}
+    \item NLI: MultiNLI dataset:
+    
+    Given \alert{hypothesis} is entailed by, neutral with, or contradicts a given \alert{premise}
+    
+    $\mathcal{Y} = \{\text{entailed}, \text{neutral}, \text{contradictory}\}$
+    
+    $\mathcal{A} = \{\text{no negation}, \text{negation}\}$
+    
+    Smallest group: entailment with negations
+\end{itemize}
+\end{viterbiframe}
+
+\section{ERM vs. DRO}
+
+\begin{viterbiframe}{ERM vs. group DRO}
+\begin{itemize}
+    \item Fine-tune ResNet50 models on Waterbirds and CelebA
+
+\item Fine-tune BERT model on MultiNLI
+
+\item SGD to train ERM
+
+\item Special SGD to train group DRO
+
+\end{itemize}
+
+
+\end{viterbiframe}
+
+\subsection{Both Have Poor Worst-group Acc}
+
+\begin{viterbiframe}{Both Have Poor Worst-group Acc}
+
+\begin{table}[]
+    \centering
+    \includegraphics[width=.7\textwidth]{img/table_1.pdf}
+    \caption{Cells are colored by accuracy, from low (red) to medium (white) to high (blue) accuracy}
+    \label{tab:analysis}
+\end{table}
+
+
+\end{viterbiframe}
+
+\begin{viterbiframe}{Both Have Poor Worst-group Acc}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/train_curve.pdf}
+    \caption{Training (light) and validation (dark) accuracy for CelebA throughout training}
+    % \label{fig:my_label}
+\end{figure}
+
+% If train using \alert{standard regularization} and hyperparameter settings
+
+\begin{itemize}
+    \item ERM and DRO have \alert{poor worst-group} accuracy in the overparameterized regime
+    
+    \item DRO \alert{improves worst-group} accuracy under appropriate regularization
+\end{itemize}
+\end{viterbiframe}
+
+\subsection{DRO improves with Appropriate Regularization}
+\begin{viterbiframe}{DRO improves with Appropriate Regularization}
+    \begin{itemize}
+        \item[1)] {\bf $\ell_2$ penalty}: Substantially reduces the \alert{generalization gap} for each group.
+        
+        Both still achieve high average test accuracies
+        
+        ERM poor worst-group Acc
+        
+        DRO improve worst-group Acc
+        
+        see Table~\ref{tab:analysis}
+        
+        \pause
+        \item[2)] {\bf Early stopping}: Train each model for a \alert{fixed (small) number of epochs}
+        
+        Same as $\ell_2$
+        
+        Small \alert{drop} for DRO in Average test Acc
+        
+        see Table~\ref{tab:analysis}
+    \end{itemize}
+\end{viterbiframe}
+
+\subsection{Group Adjustments Improves DRO}
+
+\begin{viterbiframe}{Group Adjustments Improves DRO}
+    
+    \begin{itemize}
+    \item
+        Even with regularization, the \alert{generalization gap} vary across groups: 
+        
+        e.g., \alert{Train-test accuracy gap}, Waterbirds, DRO + strong $\Ltwo$ penalty: 
+        
+        Smallest group: $15.4\%$ 
+        
+        Largest group: $1.0\%$
+        
+        \pause
+        \item So, at training time, \alert{prioritize} the groups that we \alert{expect to have a larger generalization gap}
+        
+        $\rightarrow$  Structural Risk Minimization \footcite{vapnik1992principles}.
+    
+    \end{itemize}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Group-adjusted DRO Estimator}
+    
+    Generalization Gap \[\gengap = \E_{(x,y) \sim P_g}[\ell(\theta; (x,y))] - \E_{(x,y) \sim \hP_g}[\ell(\theta; (x,y))].\]
+    
+    use $\hatgengap=\frac{C}{\mathcal{Q}rt{n_g}}$, then \emph{Group-adjusted} DRO Estimator is
+    \begin{align}\label{eqn:htadj}
+        \htadj \eqdef \argmin_{\theta \in \Theta} \ \underset{g \in \mathcal{G}}{\vphantom{\argmin}\max} \ \left\{ \E_{(x, y) \sim \hP_g}[\ell(\theta; (x, y))] + \frac{C}{\mathcal{Q}rt{n_g}}\right\}.
+    \end{align}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Group-adjusting Improves DRO}
+    
+    \begin{table}
+    \includegraphics[width=0.8\textwidth]{img/table_2.pdf}
+    % \caption{Average and worst-group test accuracies with and without group adjustments. Group adjustments improve worst-group accuracy, though average accuracy drops for Waterbirds.}
+    % \label{tab:adj}
+    \end{table}
+
+    \begin{figure}
+      \includegraphics[width=\textwidth]{img/group_adj_waterbirds.pdf}
+      \caption{
+        Training (light) and validation (dark) accuracies for each group over time,
+        for different adjustments $C$.
+        % When $C=0$, the generalization gap for waterbirds on land (green line) is large, dragging down worst-group accuracy.
+        At $C=2$, which has the best worst-group validation accuracy, the accuracies are balanced.
+        % At $C=4$, we overcompensate for group sizes, so smaller groups (e.g., waterbirds on land) do better at the expense of larger groups (e.g., landbirds on land).
+    }
+    \label{fig:adj}
+    \end{figure}
+
+\end{viterbiframe}
+
+\section{DRO vs. IW}
+
+\begin{viterbiframe}{DRO vs. Importance Weighting}
+    Importance-weighted estimator learn
+    \begin{align}
+      \htw \eqdef \argmin_{\theta \in \Theta} \ \E_{(x,y,g) \sim \hP}[w_g \ \ell(\theta; (x, y))].
+    \end{align}
+    for $w \in \Delta_m$.
+
+    \pause
+    Take $w_g = 1 / \E_{g^\prime \sim \hP} [\1(g^\prime = g)]$.
+\end{viterbiframe}
+    
+\subsection{Empirical Comparison}
+\begin{viterbiframe}{Empirical Comparison}
+        \begin{table}[th]
+        \includegraphics[width=\textwidth]{img/table_3.pdf}
+        \caption{Comparison of ERM, upweighting (UW), and group DRO models.
+        % , with binomial standard deviation in parenthesis. For each objective, we grid search over $\Ltwo$ penalty strength, number of epochs, and group adjustments and report on the model with highest validation accuracy.
+        % These numbers differ from the previous tables because of the larger grid search.
+          }
+        \label{tab:benchmark}
+        \end{table}
+\end{viterbiframe}
+
+\subsection{Theoretical comparison}
+\begin{viterbiframe}{Theoretical comparison}
+
+    \begin{itemize}
+        \item IW and DRO can learn equivalent models in the \alert{convex} setting under some importance weights 
+        
+        \pause
+        % \item 
+        \begin{proposition}\label{prop:convex-reweight}
+          Suppose that the loss $\ell(\cdot; z)$ is \alert{continuous} and \alert{convex} for all $z$ in $\mathcal{Z}$,
+          and let the uncertainty set $\mathcal{Q}$ be a set of distributions supported on $\mathcal{Z}$.
+          Assume that $\mathcal{Q}$ and the model family $\Theta \subseteq \R^d$ are \alert{convex} and \alert{compact},
+          and let $\theta^* \in \Theta$ be a \alert{minimizer of the worst-group} objective $\mathcal{R}(\theta)$.
+          Then there exists a distribution $Q^* \in \mathcal{Q}$ such that $\theta^* \in \argmin_\theta \E_{z \sim Q^*} [\ell(\theta;z)]$.
+        \end{proposition}
+        \begin{proof}
+        Linear program duality.
+        \end{proof}
+        
+        \item Not necessarily when the models are \alert{non-convex}.
+    \end{itemize}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Non-convex Case}
+Counter Example
+\begin{figure}[th]
+      \centering
+      \includegraphics[width=0.8\textwidth]{img/counterexample.pdf}
+      \caption{
+        Toy example illustrating that \alert{DRO} and \alert{importance weighting} are \alert{not equivalent}. The DRO solution is $\theta^*$, while any importance weighting would result in solutions at $\theta_1$ or $\theta_2$.
+      }\label{fig:DRO_counterexample}
+    \end{figure}
+\end{viterbiframe}
+
+\section{Algorithm}
+\begin{viterbiframe}{Training DRO}
+    Prvious work: two \alert{stochastic} optimization methods for \alert{general non-convex} DRO:
+    \begin{itemize}
+        \item[(i)] Stochastic gradient descent (SGD) on the \alert{Lagrangian dual} of the objective: fails for group DRO 
+        \item[(ii)] Direct \alert{minimax} optimization 
+    \end{itemize}
+    
+    Rewrite the DRO as
+    \begin{align}
+      \min_{\theta \in \Theta} \sup_{q \in \Delta_m} \ \sum_{g=1}^m q_g \E_{(x, y) \sim P_g}[\ell(\theta; (x, y))].
+    \end{align}
+\end{viterbiframe}
+
+\begin{viterbiframe}{Algorithm}
+    \small{
+    \begin{algorithm}[H]
+    \label{alg:opt}
+     \DontPrintSemicolon
+     \KwIn{Step sizes $\eta_q, \eta_\theta; P_g$ for each $g\in \gset$}
+     Initialize $\theta\iter{0}$ and $\padv\iter{0}$\;
+     \For{$t=1,\dots,T$}{
+      $ g \sim \text{Uniform}(1,\dots,\ngroup)$ \tcp*{Choose a group $g$ at random}
+      $ x,y \sim P_g$ \tcp*{Sample $x, y$ from group $g$}
+      $ \padv^\prime \gets \padv\iter{t-1}$;\
+      $ \padv^\prime_g \gets \padv^\prime_g\exp({\eta_q\ell(\theta\iter{t-1}; (x,y))})$ \tcp*{Update weights for group $g$}
+      $ \padv\iter{t} \gets \padv^\prime / \sum_{g^\prime} \padv^\prime_{g^\prime}$ \tcp*{Renormalize $q$}
+      $\theta\iter{t} \gets \theta\iter{t-1} - \eta_\theta \padv_g^{(t)}\nabla \ell(\theta\iter{t-1}; (x,y))$ \tcp*{Use $q$ to update $\theta$}
+     }
+      \caption{Online optimization algorithm for group DRO}
+    \end{algorithm}
+    }
+    Has a convergence rate $1/\sqrt{T}$ in the convex setting.
+\end{viterbiframe}
+
+
+\section{Conclusion}
+\begin{viterbiframe}{Discussion}
+    \begin{itemize}
+        \item What to do when groups are imperfectly specified? e.g., No prior knowledge, or training groups are ill defined for the test time.
+        
+        \item Regarding Average vs. Worst-case generalization in NNs, what other tools can you think of to analyze/address the trade-off?
+    \end{itemize}
+\end{viterbiframe}
+
+\section{Fair w/o Demogs}
+\begin{viterbiframe}{{Paper Intro}}
+\begin{itemize}
+    \item {\bf Fairness Without Demographics in Repeated Loss Minimization}
+    \begin{itemize}
+        {\small
+        \item[] Tatsunori B. Hashimoto, \textit{\scriptsize Stanford University}
+        \item[] Megha Srivastava, \textit{\scriptsize Stanford University}
+        \item[] Hongseok Namkoong, \textit{\scriptsize Stanford University}
+        \item[] Percy Liang, \textit{\scriptsize Stanford University}}
+    \end{itemize}
+\end{itemize}
+% We follow the current of the paper.
+\end{viterbiframe}
+
+\begin{viterbiframe}{Introduction}
+    \begin{itemize}
+        \item Minimize average loss $~\rightarrow~$ Representation disparity
+        \pause
+        \item Acc effects \emph{use retention}: a minority group can shrink over time.
+        \pause
+        \item ERM amplifies representation disparity
+        \pause
+        \item Minimizes the \emph{worst case risk} 
+        \pause
+        over all distributions close to the empirical distribution.
+        \item This controls the risk of the minority group, while remaining oblivious to the identity of the groups
+        
+    \end{itemize}
+    
+\end{viterbiframe}
+
+\end{document}
